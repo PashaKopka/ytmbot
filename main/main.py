@@ -5,6 +5,8 @@ import discord
 import youtube_dl
 from discord.ext import commands
 import pathlib
+import urllib.request
+import re
 
 from ytmbot.main.settings import DISCORD_BOT_TOKEN
 
@@ -22,11 +24,6 @@ MP3_FILE_OPTIONS = {
     'default_search': 'auto',
     'source_address': '0.0.0.0',
     'usenetrc': True,
-    # 'postprocessors': [{
-    #     'key': 'FFmpegExtractAudio',
-    #     'preferredcodec': 'mp3',
-    #     'preferredquality': '192',
-    # }],
     'outtmpl': os.path.normpath(FILE_PATH.__str__() + '/audio/%(title)s.%(ext)s'),
 }
 
@@ -40,6 +37,20 @@ def download_music_file(url: str) -> str:
     return filename
 
 
+def search(search_keyword):
+    html = urllib.request.urlopen("https://www.youtube.com/results?search_query=" + search_keyword)
+    video_ids = re.findall(r"watch\?v=(\S{11})", html.read().decode())
+    url = "https://www.youtube.com/watch?v=" + video_ids[0]
+    return url
+
+
+def prepare_search_keywords(words):
+    search_keywords = ''
+    for word in words:
+        search_keywords += word + '+'
+    return search_keywords
+
+
 @client.command()
 async def play(ctx, *args, channel: discord.VoiceChannel = None):
     destination = channel if channel else ctx.author.voice.channel
@@ -50,10 +61,14 @@ async def play(ctx, *args, channel: discord.VoiceChannel = None):
 
     await destination.connect()
 
-    start = time.time()
-    file = download_music_file('https://www.youtube.com/watch?v=AMCwYdTJ_PE&ab_channel=Future-Topic')
-    stop = time.time()
-    print(stop - start)
+    if args[0][:32] == 'https://www.youtube.com/watch?v=':
+        file = download_music_file(args[0])
+    else:
+        search_keywords = prepare_search_keywords(args)
+        url = search(search_keywords)
+        file = download_music_file(url)
+
+    file = file.replace('/', '_')
 
     voice_client: discord.VoiceClient = discord.utils.get(client.voice_clients, guild=ctx.guild)
     audio_source = discord.FFmpegPCMAudio(file)
