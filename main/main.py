@@ -13,7 +13,6 @@ client = commands.Bot(command_prefix='!')
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
 MP3_FILE_OPTIONS = {
     'format': 'bestaudio/best',
-    'restrictfilenames': True,
     'noplaylist': True,
     'nocheckcertificate': True,
     'ignoreerrors': False,
@@ -23,11 +22,11 @@ MP3_FILE_OPTIONS = {
     'default_search': 'auto',
     'source_address': '0.0.0.0',
     'usenetrc': True,
-    'postprocessors': [{
-        'key': 'FFmpegExtractAudio',
-        'preferredcodec': 'mp3',
-        'preferredquality': '192',
-    }],
+    # 'postprocessors': [{
+    #     'key': 'FFmpegExtractAudio',
+    #     'preferredcodec': 'mp3',
+    #     'preferredquality': '192',
+    # }],
     'outtmpl': os.path.normpath(FILE_PATH.__str__() + '/audio/%(title)s.%(ext)s'),
 }
 
@@ -35,7 +34,7 @@ MP3_FILE_OPTIONS = {
 def download_music_file(url: str) -> str:
     with youtube_dl.YoutubeDL(MP3_FILE_OPTIONS) as ydl:
         info_dict = ydl.extract_info(url, download=False)
-        filename = f'{FILE_PATH}\\audio\{info_dict.get("title", None)}.mp3'
+        filename = f'{FILE_PATH}\\audio\{info_dict.get("title", None)}.webm'
         ydl.download([url])
 
     return filename
@@ -51,7 +50,10 @@ async def play(ctx, *args, channel: discord.VoiceChannel = None):
 
     await destination.connect()
 
+    start = time.time()
     file = download_music_file('https://www.youtube.com/watch?v=AMCwYdTJ_PE&ab_channel=Future-Topic')
+    stop = time.time()
+    print(stop - start)
 
     voice_client: discord.VoiceClient = discord.utils.get(client.voice_clients, guild=ctx.guild)
     audio_source = discord.FFmpegPCMAudio(file)
