@@ -7,6 +7,7 @@ from discord.ext import commands
 import pathlib
 import urllib.request
 import re
+import urllib.parse
 
 from ytmbot.main.settings import DISCORD_BOT_TOKEN
 
@@ -38,16 +39,20 @@ def download_music_file(url: str) -> str:
 
 
 def search(search_keyword):
-    html = urllib.request.urlopen("https://www.youtube.com/results?search_query=" + search_keyword)
+    url = "https://www.youtube.com/results?search_query=" + urllib.parse.quote(search_keyword)
+    html = urllib.request.urlopen(url)
+    start = time.time()
     video_ids = re.findall(r"watch\?v=(\S{11})", html.read().decode())
+    stop = time.time()
+    print(f'search: {stop - start}')
     url = "https://www.youtube.com/watch?v=" + video_ids[0]
     return url
 
 
 def prepare_search_keywords(words):
-    search_keywords = ''
-    for word in words:
-        search_keywords += word + '+'
+    search_keywords = '+'
+    search_keywords = search_keywords.join(words)
+    search_keywords = search_keywords.encode('utf-8').decode('utf-8')
     return search_keywords
 
 
